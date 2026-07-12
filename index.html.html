@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>같이 채워요, 제주 주차</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --basalt:#211F1C;
+    --basalt-2:#302C26;
+    --basalt-3:#3C362D;
+    --sand:#F2ECDD;
+    --sand-2:#E7DEC6;
+    --card:#FBF8F0;
+    --ink:#26221C;
+    --ink-soft:#5B5548;
+    --tangerine:#EF8C1E;
+    --tangerine-dark:#C46E10;
+    --sea:#177C6E;
+    --sea-light:#E3F1EC;
+    --coral:#DD5240;
+    --coral-light:#FBE7E3;
+    --stone:#948C7B;
+    --stone-light:#EDE8DA;
+    --amber-led:#FFB74D;
+    --radius:14px;
+    --shadow:0 6px 20px rgba(33,31,28,0.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--sand);
+    color:var(--ink);
+    font-family:'Noto Sans KR',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--tangerine);color:#fff;}
+  :focus-visible{outline:3px solid var(--tangerine);outline-offset:2px;border-radius:4px;}
+
+  .app{
+    height:100vh;
+    height:100dvh;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    background:linear-gradient(180deg,var(--basalt) 0%, var(--basalt-2) 100%);
+    color:#F2ECDD;
+    padding:14px 18px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-shrink:0;
+    box-shadow:0 2px 10px rgba(0,0,0,0.25);
+    z-index:20;
+    position:relative;
+  }
+  .brand{display:flex;align-items:baseline;gap:9px;min-width:0;}
+  .brand h1{
+    font-family:'Do Hyeon',sans-serif;
+    font-weight:400;
+    font-size:clamp(18px,3.2vw,24px);
+    margin:0;
+    letter-spacing:0.5px;
+    color:#fff;
+    white-space:nowrap;
+  }
+  .brand .dot{color:var(--tangerine);}
+  .brand p{
+    margin:0;
+    font-size:11.5px;
+    color:#C9C1AE;
+    font-weight:500;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    display:none;
+  }
+  @media(min-width:620px){ .brand p{display:block;} }
+
+  .header-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+
+  .icon-btn{
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.14);
+    color:#F2ECDD;
+    width:36px;height:36px;
+    border-radius:10px;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    font-size:15px;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .icon-btn:hover{background:rgba(255,255,255,0.16);}
+  .icon-btn:active{transform:scale(0.94);}
+
+  .badge-chip{
+    background:var(--basalt-3);
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:999px;
+    padding:6px 12px 6px 8px;
+    display:flex;align-items:center;gap:7px;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  .badge-chip:hover{background:#463F33;}
+  .badge-chip .b-icon{font-size:16px;}
+  .badge-chip .b-text{display:flex;flex-direction:column;line-height:1.2;}
+  .badge-chip .b-name{font-size:11.5px;font-weight:700;color:#fff;white-space:nowrap;}
+  .badge-chip .b-pts{font-size:10px;color:var(--tangerine);font-weight:700;font-family:'JetBrains Mono',monospace;}
+
+  /* ---------- Ticker (signature element) ---------- */
+  .ticker-bar{
+    background:#171512;
+    border-bottom:1px solid #000;
+    padding:0 16px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    height:34px;
+    flex-shrink:0;
+    overflow:hidden;
+  }
+  .ticker-label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    font-weight:700;
+    color:var(--amber-led);
+    letter-spacing:1.5px;
+    flex-shrink:0;
+    text-shadow:0 0 6px rgba(255,183,77,0.5);
+    border-right:1px solid #3a352c;
+    padding-right:10px;
+  }
+  .ticker-track{
+    flex:1;
+    overflow:hidden;
+    position:relative;
+    height:100%;
+  }
+  .ticker-list{
+    list-style:none;
+    margin:0;padding:0;
+    display:flex;
+    flex-direction:column;
+  }
+  .ticker-item{
+    height:34px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11.5px;
+    color:#E8D9BC;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .ticker-item .t-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+  .ticker-item .t-dot.available{background:#3FD6A8;box-shadow:0 0 6px #3FD6A8;}
+  .ticker-item .t-dot.full{background:#FF6B57;box-shadow:0 0 6px #FF6B57;}
+  .ticker-item .t-time{color:#8A8272;}
+  .ticker-empty{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:#6b6656;
+  }
+  @keyframes tickerIn{
+    from{opacity:0; transform:translateY(6px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  .ticker-item.is-new{animation:tickerIn .4s ease;}
+
+  /* ---------- Body layout ---------- */
+  .tabs{
+    display:flex;
+    background:var(--sand-2);
+    flex-shrink:0;
+  }
+  .tab-btn{
+    flex:1;
+    border:none;
+    background:transparent;
+    padding:10px 0;
+    font-family:'Noto Sans KR',sans-serif;
+    font-weight:700;
+    font-size:13px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    border-bottom:3px solid transparent;
+  }
+  .tab-btn.active{color:var(--tangerine-dark);border-bottom-color:var(--tangerine);}
+
+  .body-wrap{
+    flex:1;
+    display:flex;
+    min-height:0;
+    position:relative;
+  }
+
+  .sidebar{
+    width:100%;
+    background:var(--sand);
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+    overflow:hidden;
+  }
+  .map-wrap{
+    width:100%;
+    position:relative;
+    flex-shrink:0;
+    background:#cfd9d6;
+  }
+
+  @media(min-width:880px){
+    .tabs{display:none;}
+    .body-wrap{flex-direction:row;}
+    .sidebar{width:380px;flex-shrink:0;border-right:1px solid var(--sand-2);}
+    .map-wrap{flex:1;}
+  }
+  @media(max-width:879px){
+    .body-wrap{flex-direction:column;}
+    .map-wrap{height:100%;}
+    .sidebar{height:100%;}
+    .body-wrap.show-map .sidebar{display:none;}
+    .body-wrap.show-list .map-wrap{display:none;}
+  }
+
+  .dest-search{
+    display:flex;
+    gap:6px;
+    padding:12px 16px 0;
+    flex-shrink:0;
+  }
+  .dest-search input{
+    flex:1;
+    min-width:0;
+    border:1.5px solid var(--sand-2);
+    background:var(--card);
+    border-radius:10px;
+    padding:9px 12px;
+    font-size:12.5px;
+    font-family:'Noto Sans KR',sans-serif;
+    color:var(--ink);
+  }
+  .dest-search input:focus{ outline:none; border-color:var(--tangerine); }
+  .dest-search input::placeholder{ color:var(--stone); }
+  .dest-search select{
+    flex:1;
+    min-width:0;
+    border:1.5px solid var(--sand-2);
+    background:var(--card);
+    border-radius:10px;
+    padding:9px 10px;
+    font-size:12px;
+    font-family:'Noto Sans KR',sans-serif;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .dest-search select:focus{ outline:none; border-color:var(--tangerine); }
+  .dest-search + .dest-search{ padding-top:6px; }
+  .dest-search button{
+    border:none;
+    background:var(--basalt);
+    color:#fff;
+    width:38px;
+    border-radius:10px;
+    font-size:14px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .dest-search button:hover{ background:var(--basalt-2); }
+  .dest-search button:disabled{ opacity:0.6; cursor:default; }
+
+  .dest-results-banner{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    background:#FCEBD2;
+    border:1px solid var(--tangerine);
+    border-radius:10px;
+    padding:8px 10px;
+    margin:2px 4px 10px;
+    font-size:11.5px;
+    color:var(--ink);
+  }
+  .dest-results-banner b{ color:var(--tangerine-dark); }
+  .dest-results-banner button{
+    border:none;background:none;
+    color:var(--tangerine-dark);
+    font-size:11px;
+    font-weight:700;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+
+  .dist-badge{
+    display:inline-block;
+    background:var(--sand-2);
+    color:var(--ink-soft);
+    font-size:9.5px;
+    font-weight:700;
+    padding:1px 6px;
+    border-radius:999px;
+    margin-left:4px;
+    vertical-align:middle;
+    font-family:'JetBrains Mono',monospace;
+  }
+
+  .dest-pin{
+    width:26px;height:26px;
+    border-radius:50%;
+    background:#2E6FEE;
+    border:2.5px solid #fff;
+    box-shadow:0 3px 8px rgba(0,0,0,0.4);
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;
+  }
+
+  .sidebar-head{
+    padding:14px 16px 8px;
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    flex-shrink:0;
+    gap:8px;
+  }
+  .sidebar-head h2{
+    margin:0;
+    font-family:'Do Hyeon',sans-serif;
+    font-weight:400;
+    font-size:17px;
+    color:var(--ink);
+  }
+  .sidebar-head .count{color:var(--tangerine-dark);}
+  .sidebar-sub{
+    margin:2px 0 0;
+    font-size:10.5px;
+    color:var(--ink-soft);
+    font-weight:500;
+  }
+  .refresh-btn{
+    border:none;background:none;
+    color:var(--ink-soft);
+    font-size:16px;
+    cursor:pointer;
+    padding:4px 6px;
+    border-radius:8px;
+  }
+  .refresh-btn:hover{background:var(--sand-2);}
+  .refresh-btn.spinning{animation:spin .7s linear;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .lot-list{
+    flex:1;
+    overflow-y:auto;
+    padding:4px 12px 12px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  .region-header{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;
+    font-weight:700;
+    color:var(--tangerine-dark);
+    text-transform:uppercase;
+    letter-spacing:0.8px;
+    padding:12px 4px 3px;
+  }
+  .region-header:first-child{padding-top:2px;}
+
+  .expansion-box{
+    background:var(--card);
+    border:1.5px dashed var(--sand-2);
+    border-radius:var(--radius);
+    padding:10px 12px 11px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .expansion-chip{
+    background:var(--sand-2);
+    color:var(--ink-soft);
+    font-size:11px;
+    font-weight:700;
+    padding:4px 10px;
+    border-radius:999px;
+  }
+  .expansion-note{
+    width:100%;
+    margin:6px 0 0;
+    font-size:10.5px;
+    color:var(--stone);
+    line-height:1.5;
+  }
+
+  .lot-card{
+    background:var(--card);
+    border:1px solid var(--sand-2);
+    border-radius:var(--radius);
+    padding:11px 12px;
+    cursor:pointer;
+    transition:border-color .15s ease, transform .1s ease;
+  }
+  .lot-card:hover{border-color:var(--tangerine);}
+  .lot-card:active{transform:scale(0.99);}
+  .lot-card.is-selected{border-color:var(--tangerine);box-shadow:0 0 0 2px rgba(239,140,30,0.18);}
+
+  .lot-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+  .lot-name{font-weight:700;font-size:13.5px;color:var(--ink);}
+  .lot-addr{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+  .lot-meta{
+    margin-top:8px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+  }
+  .status-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    padding:3px 9px;
+    border-radius:999px;
+    font-size:11px;
+    font-weight:700;
+    flex-shrink:0;
+    white-space:nowrap;
+  }
+  .status-pill.available{background:var(--sea-light);color:var(--sea);}
+  .status-pill.full{background:var(--coral-light);color:var(--coral);}
+  .status-pill.stale{background:var(--stone-light);color:#8b8262;}
+  .status-pill.unknown{background:var(--stone-light);color:var(--stone);}
+  .status-pill .p-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
+  .lot-cap{font-size:11px;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;}
+
+  .seat-est{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    font-weight:700;
+    padding:1px 7px;
+    border-radius:999px;
+    white-space:nowrap;
+  }
+  .seat-est.ok{background:var(--sea-light);color:var(--sea);}
+  .seat-est.few{background:#FCEBD2;color:var(--tangerine-dark);}
+  .seat-est.full{background:var(--coral-light);color:var(--coral);}
+
+  /* ---------- Map ---------- */
+  #map{position:absolute;inset:0;}
+
+  .pin{
+    width:32px;height:32px;
+    border-radius:50% 50% 50% 4px;
+    transform:rotate(45deg);
+    display:flex;align-items:center;justify-content:center;
+    border:2.5px solid #fff;
+    box-shadow:0 3px 8px rgba(0,0,0,0.35);
+    position:relative;
+  }
+  .pin .pin-car{transform:rotate(-45deg);font-size:14px;}
+  .pin.available{background:var(--sea);}
+  .pin.full{background:var(--coral);}
+  .pin.stale{background:#B7AD8F;}
+  .pin.unknown{background:var(--stone);}
+  .pin.is-fresh::before{
+    content:'';
+    position:absolute;
+    inset:-6px;
+    border-radius:50%;
+    border:2px solid currentColor;
+    color:inherit;
+    animation:pulse 1.6s ease-out infinite;
+  }
+  @keyframes pulse{
+    0%{transform:scale(0.6);opacity:0.8;}
+    100%{transform:scale(1.7);opacity:0;}
+  }
+
+  .map-legend{
+    position:absolute;
+    left:10px;bottom:10px;
+    background:rgba(33,31,28,0.88);
+    color:#F2ECDD;
+    padding:9px 12px;
+    border-radius:10px;
+    font-size:11px;
+    display:flex;
+    gap:12px;
+    z-index:15;
+    backdrop-filter:blur(3px);
+  }
+  .map-legend span{display:flex;align-items:center;gap:5px;white-space:nowrap;}
+  .map-legend .dot{width:9px;height:9px;border-radius:50%;}
+  .map-legend .dot.available{background:var(--sea);}
+  .map-legend .dot.full{background:var(--coral);}
+  .map-legend .dot.unknown{background:var(--stone);}
+
+  .locate-btn{
+    position:absolute;
+    right:10px;top:10px;
+    z-index:15;
+    background:#fff;
+    border:1px solid var(--sand-2);
+    box-shadow:var(--shadow);
+    width:38px;height:38px;
+    border-radius:10px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;
+    cursor:pointer;
+  }
+  .locate-btn:hover{background:var(--sand);}
+
+  /* ---------- Popup ---------- */
+  .leaflet-popup-content-wrapper{border-radius:var(--radius);}
+  .leaflet-popup-content{margin:14px 14px;width:240px !important;}
+  .pop-name{font-weight:700;font-size:14px;color:var(--ink);margin:0 0 2px;}
+  .pop-addr{font-size:11.5px;color:var(--ink-soft);margin:0 0 8px;}
+  .pop-row{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-soft);margin-bottom:3px;}
+  .pop-row b{color:var(--ink);font-weight:700;}
+  .pop-status{
+    margin:8px 0;
+    padding:7px 9px;
+    border-radius:9px;
+    font-size:11.5px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .pop-status.available{background:var(--sea-light);color:var(--sea);}
+  .pop-status.full{background:var(--coral-light);color:var(--coral);}
+  .pop-status.stale{background:var(--stone-light);color:#8b8262;}
+  .pop-status.unknown{background:var(--stone-light);color:var(--stone);}
+  .pop-btns{display:flex;gap:6px;margin-top:8px;}
+  .pop-btn{
+    flex:1;
+    border:none;
+    border-radius:8px;
+    padding:8px 4px;
+    font-size:11.5px;
+    font-weight:700;
+    cursor:pointer;
+    font-family:'Noto Sans KR',sans-serif;
+  }
+  .pop-btn.ok{background:var(--sea);color:#fff;}
+  .pop-btn.no{background:var(--coral);color:#fff;}
+  .pop-btn:active{transform:scale(0.97);}
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position:fixed;
+    left:50%;bottom:18px;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--basalt);
+    color:#fff;
+    padding:10px 18px;
+    border-radius:999px;
+    font-size:12.5px;
+    font-weight:700;
+    box-shadow:var(--shadow);
+    z-index:3000;
+    opacity:0;
+    transition:opacity .25s ease, transform .25s ease;
+    pointer-events:none;
+    white-space:nowrap;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .toast .t-pts{color:var(--tangerine);margin-left:6px;}
+
+  /* ---------- Info modal ---------- */
+  .modal-backdrop{
+    position:fixed;inset:0;
+    background:rgba(20,18,15,0.55);
+    display:none;
+    align-items:center;justify-content:center;
+    z-index:3000;
+    padding:20px;
+  }
+  .modal-backdrop.open{display:flex;}
+  .modal{
+    background:var(--card);
+    border-radius:16px;
+    max-width:380px;
+    width:100%;
+    padding:20px 20px 18px;
+    box-shadow:var(--shadow);
+  }
+  .modal h3{
+    font-family:'Do Hyeon',sans-serif;
+    font-weight:400;
+    font-size:18px;
+    margin:0 0 10px;
+    color:var(--ink);
+  }
+  .modal p{font-size:12.5px;line-height:1.6;color:var(--ink-soft);margin:0 0 10px;}
+  .storage-note{
+    background:var(--sand);
+    border-radius:9px;
+    padding:8px 10px;
+    font-size:11.5px !important;
+  }
+  .modal .tier-list{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;}
+  .modal .tier-list li{
+    display:flex;align-items:center;gap:8px;
+    font-size:12px;color:var(--ink);
+    background:var(--sand);
+    padding:6px 10px;border-radius:8px;
+  }
+  .modal .tier-list li.active-tier{background:#FCEBD2;border:1px solid var(--tangerine);font-weight:700;}
+  .modal-close{
+    margin-top:14px;
+    width:100%;
+    border:none;
+    background:var(--basalt);
+    color:#fff;
+    padding:10px;
+    border-radius:10px;
+    font-weight:700;
+    font-size:13px;
+    cursor:pointer;
+  }
+
+  .loading-overlay{
+    position:absolute;inset:0;
+    background:var(--sand);
+    display:flex;align-items:center;justify-content:center;
+    flex-direction:column;
+    gap:8px;
+    z-index:1200;
+    transition:opacity .3s ease;
+  }
+  .loading-overlay p{font-size:12px;color:var(--ink-soft);font-weight:600;}
+  .spinner{
+    width:26px;height:26px;
+    border:3px solid var(--sand-2);
+    border-top-color:var(--tangerine);
+    border-radius:50%;
+    animation:spin 0.8s linear infinite;
+  }
+
+  .reset-link{
+    display:block;
+    text-align:center;
+    font-size:10.5px;
+    color:var(--stone);
+    padding:8px 0 2px;
+    text-decoration:underline;
+    cursor:pointer;
+    flex-shrink:0;
+    background:none;border:none;
+    width:100%;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .pin.is-fresh::before{animation:none;}
+    .ticker-item.is-new{animation:none;}
+    .spinner{animation:none;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="brand">
+      <h1>같이 채워요<span class="dot">.</span> 제주 주차</h1>
+      <p>공공데이터 위치 + 이용자 실시간 제보 · 오윤서 제작</p>
+    </div>
+    <div class="header-right">
+      <button class="icon-btn" id="info-btn" aria-label="데이터 안내" title="데이터 안내">ℹ︎</button>
+      <div class="badge-chip" id="badge-chip" role="button" tabindex="0" aria-label="내 뱃지 보기">
+        <span class="b-icon" id="badge-icon">🌱</span>
+        <span class="b-text">
+          <span class="b-name" id="badge-name">주차 새내기</span>
+          <span class="b-pts" id="badge-pts">0P</span>
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <div class="ticker-bar">
+    <span class="ticker-label">LIVE 제보</span>
+    <div class="ticker-track">
+      <ul class="ticker-list" id="ticker-list">
+        <li class="ticker-empty">아직 제보가 없어요. 첫 제보를 남겨보세요 →</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-map" type="button">🗺️ 지도</button>
+    <button class="tab-btn" id="tab-list" type="button">📋 목록</button>
+  </div>
+
+  <div class="body-wrap show-map" id="body-wrap">
+    <div class="sidebar">
+      <div class="dest-search">
+        <select id="dest-quick-select" aria-label="자주 찾는 목적지 빠른 선택">
+          <option value="">⚡ 자주 찾는 목적지 빠른 선택</option>
+          <option value="동문시장">제주 동문시장</option>
+          <option value="제주공항">제주국제공항</option>
+          <option value="함덕해수욕장">함덕해수욕장</option>
+          <option value="성산일출봉">성산일출봉</option>
+          <option value="중문관광단지">중문관광단지</option>
+        </select>
+      </div>
+      <div class="dest-search">
+        <input type="text" id="dest-input" placeholder="다른 목적지를 입력하세요 (예: 협재해수욕장)" />
+        <button id="dest-search-btn" type="button" aria-label="목적지 검색">🔍</button>
+      </div>
+      <div class="sidebar-head">
+        <div>
+          <h2>유동인구 TOP <span class="count" id="lot-count">20</span></h2>
+          <p class="sidebar-sub">1차로 선정한 제주 주요 주차장</p>
+        </div>
+        <button class="refresh-btn" id="refresh-btn" aria-label="새로고침" title="새로고침">⟳</button>
+      </div>
+      <div class="lot-list" id="lot-list"></div>
+      <button class="reset-link" id="reset-btn" type="button">내 뱃지·포인트 초기화</button>
+      <a class="reset-link" href="../index.html">← 전체 프로젝트 목록으로</a>
+    </div>
+
+    <div class="map-wrap">
+      <div id="map"></div>
+      <button class="locate-btn" id="locate-btn" aria-label="내 위치로 이동" title="내 위치로 이동">📍</button>
+      <div class="map-legend">
+        <span><i class="dot available"></i>여유</span>
+        <span><i class="dot full"></i>만차</span>
+        <span><i class="dot unknown"></i>정보없음</span>
+      </div>
+      <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner"></div>
+        <p>주차장 정보를 불러오는 중...</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="modal-backdrop" id="info-modal">
+    <div class="modal">
+      <h3>이 정보는 어디서 왔나요?</h3>
+      <p><b>위치·면수·운영시간·요금·예상 잔여석(예: 34/192면)</b>은 공공데이터포털의 전국주차장정보 표준데이터를 본뜬 <b>샘플 데이터</b>예요. 실제 서비스로 만들려면 공공데이터포털 API 키를 발급받아 연동해야 해요.</p>
+      <p>지도 핀과 목록의 <b>여유/만차 표시(상태 뱃지)</b>는 센서가 아니라 <b>이용자들이 직접 남긴 제보</b>예요. 제보 후 30분이 지나면 "정보 오래됨"으로, 1시간이 지나면 다시 "정보 없음"으로 흐려져요. 아직 아무도 제보하지 않았을 땐 예상 잔여석 숫자만 참고하세요.</p>
+      <p><b>이 20곳</b>은 처음부터 전역을 다 넣지 않고, 유동인구가 많은 곳부터 <b>1차로 선정</b>한 목록이에요. 지금 등급(매우 많음/많음)은 관광지 인지도 등을 참고한 추정치이고, 실제로는 제주 관광빅데이터플랫폼 같은 방문객 통계와 연동할 수 있어요. 이용이 쌓이면 "확장 예정" 지역부터 순차적으로 넓혀갈 계획이에요.</p>
+      <p class="storage-note" id="storage-mode-note"><b>저장 상태</b>: 확인 중...</p>
+      <button class="modal-close" id="info-close" type="button">확인했어요</button>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="badge-modal">
+    <div class="modal">
+      <h3>내 뱃지</h3>
+      <p id="badge-modal-desc">제보를 남길 때마다 포인트가 쌓이고 등급이 올라가요.</p>
+      <ul class="tier-list" id="tier-list"></ul>
+      <button class="modal-close" id="badge-close" type="button">닫기</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  /* ================= DATA ================= */
+  var PARKING_LOTS = [
+    // ---- 제주시 도심 ----
+    { id:'lot1', name:'제주시청 제1공영주차장', address:'제주시 광양9길 10', region:'제주시 도심', traffic:'high',
+      lat:33.4996, lng:126.5311, capacity:192, disabled:6,
+      hours:'평일 09:00~18:00 유료 (최초 30분 무료, 15분당 300원)', note:'주말·공휴일 무료 · 24시간 개방' },
+    { id:'lot2', name:'이마트 제주점 주차장', address:'제주시 청귤로 6', region:'제주시 도심', traffic:'very-high',
+      lat:33.4883, lng:126.4902, capacity:450, disabled:14,
+      hours:'10:00~23:00', note:'매장 이용 고객 무료' },
+    { id:'lot3', name:'제주올레시장 공영주차장', address:'제주시 관덕로14길 20', region:'제주시 도심', traffic:'very-high',
+      lat:33.5136, lng:126.5265, capacity:210, disabled:8,
+      hours:'24시간 운영', note:'최초 30분 무료, 이후 10분당 500원' },
+    { id:'lot4', name:'제주버스터미널 공영주차장', address:'제주시 오리로 15길', region:'제주시 도심', traffic:'very-high',
+      lat:33.4880, lng:126.5118, capacity:180, disabled:5,
+      hours:'24시간 운영', note:'1일 최대 5,000원' },
+    { id:'lot5', name:'탑동광장 공영주차장', address:'제주시 탑동로', region:'제주시 도심', traffic:'high',
+      lat:33.5175, lng:126.5218, capacity:320, disabled:10,
+      hours:'24시간 운영', note:'30분당 500원' },
+    { id:'lot6', name:'국립제주박물관 주차장', address:'제주시 일주동로 17', region:'제주시 도심', traffic:'medium',
+      lat:33.5127, lng:126.5480, capacity:90, disabled:4,
+      hours:'09:00~18:00', note:'무료' },
+    { id:'lot7', name:'신제주 로터리 공영주차장', address:'제주시 신광로', region:'제주시 도심', traffic:'high',
+      lat:33.4863, lng:126.4931, capacity:140, disabled:5,
+      hours:'09:00~22:00', note:'30분당 500원' },
+    { id:'lot8', name:'제주삼성혈 주차장', address:'제주시 삼성로 22', region:'제주시 도심', traffic:'medium',
+      lat:33.4931, lng:126.5232, capacity:60, disabled:3,
+      hours:'09:00~18:00', note:'무료' },
+
+    // ---- 제주시 근교 ----
+    { id:'lot9', name:'용두암 공영주차장', address:'제주시 용담동', region:'제주시 근교', traffic:'high',
+      lat:33.5147, lng:126.5137, capacity:70, disabled:3,
+      hours:'09:00~22:00', note:'최초 30분 무료, 이후 20분당 500원' },
+    { id:'lot10', name:'이호테우해변 공영주차장', address:'제주시 이호일동', region:'제주시 근교', traffic:'high',
+      lat:33.5063, lng:126.4650, capacity:150, disabled:5,
+      hours:'24시간 운영', note:'하계 성수기 30분당 500원 · 비수기 무료' },
+    { id:'lot11', name:'한라수목원 공영주차장', address:'제주시 수목원길 72', region:'제주시 근교', traffic:'medium',
+      lat:33.4735, lng:126.4985, capacity:200, disabled:8,
+      hours:'06:00~22:00', note:'무료' },
+    { id:'lot12', name:'제주민속오일시장 주차장', address:'제주시 오일장서길 20', region:'제주시 근교', traffic:'medium',
+      lat:33.4985, lng:126.4726, capacity:280, disabled:9,
+      hours:'09:00~19:00', note:'2·7일 오일장 임시 확장운영 · 무료' },
+    { id:'lot13', name:'제주공항 인근 노상공영주차장', address:'제주시 공항로', region:'제주시 근교', traffic:'very-high',
+      lat:33.5070, lng:126.4935, capacity:120, disabled:4,
+      hours:'24시간 운영', note:'30분당 1,000원' },
+
+    // ---- 동·서부 관광지 ----
+    { id:'lot14', name:'함덕서우봉해변 공영주차장', address:'조천읍 조함해안로', region:'동·서부 관광지', traffic:'very-high',
+      lat:33.5433, lng:126.6696, capacity:230, disabled:7,
+      hours:'24시간 운영', note:'하계 성수기 30분당 1,000원 · 비수기 무료' },
+    { id:'lot15', name:'애월한담해안 공영주차장', address:'애월읍 곽지리', region:'동·서부 관광지', traffic:'high',
+      lat:33.4613, lng:126.3105, capacity:90, disabled:3,
+      hours:'09:00~21:00', note:'30분당 500원' },
+    { id:'lot16', name:'협재해수욕장 공영주차장', address:'한림읍 협재리', region:'동·서부 관광지', traffic:'very-high',
+      lat:33.3941, lng:126.2396, capacity:260, disabled:8,
+      hours:'24시간 운영', note:'하계 성수기 30분당 1,000원' },
+    { id:'lot17', name:'성산일출봉 공영주차장', address:'성산읍 성산리', region:'동·서부 관광지', traffic:'very-high',
+      lat:33.4587, lng:126.9425, capacity:400, disabled:12,
+      hours:'07:00~20:00', note:'1일권 5,000원(승용차 기준)' },
+
+    // ---- 서귀포시 ----
+    { id:'lot18', name:'서귀포매일올레시장 공영주차장', address:'서귀포시 중앙로62번길', region:'서귀포시', traffic:'very-high',
+      lat:33.2508, lng:126.5637, capacity:190, disabled:6,
+      hours:'24시간 운영', note:'최초 30분 무료, 이후 10분당 500원' },
+    { id:'lot19', name:'천지연폭포 공영주차장', address:'서귀포시 천지동', region:'서귀포시', traffic:'high',
+      lat:33.2446, lng:126.5583, capacity:150, disabled:5,
+      hours:'08:00~22:00', note:'1일권 3,000원' },
+    { id:'lot20', name:'중문관광단지 공영주차장', address:'서귀포시 중문관광로', region:'서귀포시', traffic:'very-high',
+      lat:33.2461, lng:126.4117, capacity:340, disabled:10,
+      hours:'24시간 운영', note:'30분당 500원' }
+  ];
+
+  // 목적지별 대표 주차장에서 가져온 "예상 잔여석" 샘플 수치예요.
+  // 실시간 센서 데이터가 아니라 초기 안내용 예시 숫자이고, 실제 여유/만차는
+  // 아래 이용자 제보(체크인) 상태 뱃지가 우선이에요.
+  var SAMPLE_AVAILABILITY = {
+    lot1:34,  lot2:187, lot3:0,   lot4:52,  lot5:128,
+    lot6:61,  lot7:9,   lot8:38,  lot9:3,   lot10:77,
+    lot11:144,lot12:96, lot13:0,  lot14:0,  lot15:12,
+    lot16:41, lot17:63, lot18:8,  lot19:55, lot20:172
+  };
+  PARKING_LOTS.forEach(function(lot){
+    lot.sampleAvailable = SAMPLE_AVAILABILITY[lot.id];
+  });
+
+  var TRAFFIC_META = {
+    'very-high': { label:'유동인구 매우 많음', order:0, icon:'🔥' },
+    'high':      { label:'유동인구 많음',     order:1, icon:'●' },
+    'medium':    { label:'그 외 주요 스팟',   order:2, icon:'●' }
+  };
+
+  // 다음 확장 후보 — 아직 지도엔 없고, 이용 데이터가 쌓이면 순차적으로 추가될 예정
+  var EXPANSION_CANDIDATES = [
+    '정방폭포', '산굼부리', '표선해수욕장', '카멜리아힐', '산방산', '노형오거리'
+  ];
+
+
+  // 자주 찾는 목적지 빠른 선택용 좌표 — 지오코딩 호출 없이 바로 목적지 검색과 동일하게 동작해요.
+  var QUICK_DESTS = {
+    '동문시장':     { lat: 33.5122, lng: 126.5278 },
+    '제주공항':     { lat: 33.5066, lng: 126.4930 },
+    '함덕해수욕장': { lat: 33.5434, lng: 126.6692 },
+    '성산일출봉':   { lat: 33.4587, lng: 126.9425 },
+    '중문관광단지': { lat: 33.2500, lng: 126.4120 }
+  };
+
+  var TIERS = [
+    { min:0,  name:'주차 새내기',   icon:'🌱' },
+    { min:3,  name:'골목 탐험가',   icon:'🧭' },
+    { min:7,  name:'동네 척척박사', icon:'📍' },
+    { min:15, name:'제주 주차요정', icon:'🍊' }
+  ];
+
+  var STALE_MS = 30 * 60 * 1000;
+  var UNKNOWN_MS = 60 * 60 * 1000;
+  var FRESH_MS = 5 * 60 * 1000;
+  var POLL_MS = 25 * 1000;
+  var TICK_MS = 15 * 1000;
+
+  /* ================= STATE ================= */
+  var state = {
+    checkins: {},      // lotId -> {status, ts}
+    feed: [],           // [{ts, lotName, status}]
+    myStats: { checkins: 0 },
+    selectedLotId: null,
+    destQuery: null,     // 목적지 검색어
+    destResults: null    // 목적지 근처 주차장 정렬 결과 [{lot, dist}]
+  };
+
+  var map, markers = {}, userMarker = null, destMarker = null;
+
+  /* ================= STORAGE HELPERS ================= */
+  // window.storage는 Claude 대화 화면 안에서 이 파일을 열었을 때만 주입돼요.
+  // 파일을 저장해서 따로 열거나 다른 곳에 올린 경우엔 window.storage가 아예 없어서
+  // 지금까지는 새로고침할 때마다 기록이 사라졌어요. 그럴 때는 이 브라우저의
+  // localStorage로 자동 전환해서, 최소한 "내 기기에서는" 기록이 남게 했어요.
+  var LS_PREFIX = 'jejuParking:';
+
+  function hasStorage(){
+    return typeof window.storage !== 'undefined' && window.storage;
+  }
+  function hasLocalStorage(){
+    try {
+      var k = '__jp_test__';
+      window.localStorage.setItem(k, '1');
+      window.localStorage.removeItem(k);
+      return true;
+    } catch(e){ return false; }
+  }
+  function lsGet(key){
+    try { return window.localStorage.getItem(LS_PREFIX + key); }
+    catch(e){ return null; }
+  }
+  function lsSet(key, value){
+    try { window.localStorage.setItem(LS_PREFIX + key, value); return true; }
+    catch(e){ return false; }
+  }
+  function lsDelete(key){
+    try { window.localStorage.removeItem(LS_PREFIX + key); return true; }
+    catch(e){ return false; }
+  }
+
+  function storageGet(key, shared){
+    if(hasStorage()){
+      return window.storage.get(key, shared).then(function(r){
+        return r ? r.value : null;
+      }).catch(function(){ return hasLocalStorage() ? lsGet(key) : null; });
+    }
+    return Promise.resolve(hasLocalStorage() ? lsGet(key) : null);
+  }
+  function storageSet(key, value, shared){
+    if(hasStorage()){
+      return window.storage.set(key, value, shared).then(function(){ return true; })
+        .catch(function(){ return hasLocalStorage() ? lsSet(key, value) : false; });
+    }
+    return Promise.resolve(hasLocalStorage() ? lsSet(key, value) : false);
+  }
+  function storageDelete(key, shared){
+    if(hasStorage()){
+      return window.storage.delete(key, shared).then(function(){ return true; })
+        .catch(function(){ return hasLocalStorage() ? lsDelete(key) : false; });
+    }
+    return Promise.resolve(hasLocalStorage() ? lsDelete(key) : false);
+  }
+
+  /* ================= UTIL ================= */
+  function relTime(ts){
+    var diff = Math.max(0, Date.now() - ts);
+    var m = Math.floor(diff / 60000);
+    if(m < 1) return '방금 전';
+    if(m < 60) return m + '분 전';
+    var h = Math.floor(m / 60);
+    if(h < 24) return h + '시간 전';
+    return Math.floor(h / 24) + '일 전';
+  }
+
+  function statusMeta(lotId){
+    var c = state.checkins[lotId];
+    if(!c){
+      return { key:'unknown', label:'정보 없음', fresh:false };
+    }
+    var elapsed = Date.now() - c.ts;
+    if(elapsed > UNKNOWN_MS){
+      return { key:'unknown', label:'정보 없음', fresh:false };
+    }
+    if(elapsed > STALE_MS){
+      return { key:'stale', label:'정보 오래됨 · ' + relTime(c.ts), fresh:false };
+    }
+    return {
+      key: c.status,
+      label: (c.status === 'available' ? '여유 있음' : '만차') + ' · ' + relTime(c.ts),
+      fresh: elapsed < FRESH_MS
+    };
+  }
+
+  function seatEstMeta(lot){
+    var avail = lot.sampleAvailable;
+    if(avail === undefined || avail === null) return null;
+    var cls = 'ok', label = '여유';
+    if(avail === 0){ cls = 'full'; label = '만차'; }
+    else if(avail <= 10){ cls = 'few'; label = '혼잡'; }
+    return { cls: cls, label: label, avail: avail };
+  }
+
+  function currentTier(checkinCount){
+    var tier = TIERS[0];
+    for(var i=0;i<TIERS.length;i++){
+      if(checkinCount >= TIERS[i].min) tier = TIERS[i];
+    }
+    return tier;
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, function(c){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+    });
+  }
+
+  /* ================= RENDER: MAP ================= */
+  function pinHtml(lot){
+    var meta = statusMeta(lot.id);
+    return '<div class="pin ' + meta.key + (meta.fresh ? ' is-fresh' : '') + '">' +
+             '<span class="pin-car">🚗</span>' +
+           '</div>';
+  }
+
+  function pinIcon(lot){
+    return L.divIcon({
+      html: pinHtml(lot),
+      className: '',
+      iconSize: [32,32],
+      iconAnchor: [16,16],
+      popupAnchor: [0,-18]
+    });
+  }
+
+  function popupHtml(lot){
+    var meta = statusMeta(lot.id);
+    var seat = seatEstMeta(lot);
+    var seatRow = seat
+      ? '<div class="pop-row"><span>예상 잔여</span><b>' + seat.avail + ' / ' + lot.capacity + '면 (' + seat.label + ')</b></div>'
+      : '';
+    return (
+      '<div class="pop">' +
+        '<p class="pop-name">' + escapeHtml(lot.name) + '</p>' +
+        '<p class="pop-addr">' + escapeHtml(lot.address) + '</p>' +
+        '<div class="pop-row"><span>총 주차면</span><b>' + lot.capacity + '면 (장애인 ' + lot.disabled + '면)</b></div>' +
+        seatRow +
+        '<div class="pop-row"><span>운영시간</span><b>' + escapeHtml(lot.hours) + '</b></div>' +
+        '<div class="pop-row"><span>요금</span><b>' + escapeHtml(lot.note) + '</b></div>' +
+        '<div class="pop-status ' + meta.key + '"><span>이용자 제보 상태</span><b>' + meta.label + '</b></div>' +
+        '<div class="pop-btns">' +
+          '<button class="pop-btn ok" onclick="window.__jejuParking.checkIn(\'' + lot.id + '\',\'available\')">🟢 자리 있어요</button>' +
+          '<button class="pop-btn no" onclick="window.__jejuParking.checkIn(\'' + lot.id + '\',\'full\')">🔴 만차예요</button>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function initMap(){
+    map = L.map('map', { zoomControl:true, attributionControl:true })
+      .setView([33.38, 126.55], 10);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    var bounds = [];
+    PARKING_LOTS.forEach(function(lot){
+      var marker = L.marker([lot.lat, lot.lng], { icon: pinIcon(lot) })
+        .addTo(map)
+        .bindPopup(popupHtml(lot));
+      bounds.push([lot.lat, lot.lng]);
+      marker.on('popupopen', function(){
+        marker.setPopupContent(popupHtml(lot));
+      });
+      markers[lot.id] = marker;
+    });
+
+    if(bounds.length){
+      map.fitBounds(bounds, { padding:[28,28], maxZoom:12 });
+    }
+  }
+
+  function refreshMarkers(){
+    PARKING_LOTS.forEach(function(lot){
+      var marker = markers[lot.id];
+      if(!marker) return;
+      marker.setIcon(pinIcon(lot));
+      if(marker.isPopupOpen()){
+        marker.setPopupContent(popupHtml(lot));
+      }
+    });
+  }
+
+  /* ================= RENDER: SIDEBAR LIST ================= */
+  function lotCardHtml(lot, distText){
+    var meta = statusMeta(lot.id);
+    var seat = seatEstMeta(lot);
+    var selected = state.selectedLotId === lot.id ? ' is-selected' : '';
+    var distHtml = distText ? ' <span class="dist-badge">' + distText + '</span>' : '';
+    var seatHtml = seat
+      ? '<span class="seat-est ' + seat.cls + '">예상 ' + seat.avail + '/' + lot.capacity + '면</span>'
+      : '';
+    return (
+      '<div class="lot-card' + selected + '" data-lot="' + lot.id + '" role="button" tabindex="0">' +
+        '<div class="lot-card-top">' +
+          '<div>' +
+            '<div class="lot-name">' + escapeHtml(lot.name) + distHtml + '</div>' +
+            '<div class="lot-addr">' + escapeHtml(lot.address) + '</div>' +
+          '</div>' +
+          '<span class="status-pill ' + meta.key + '"><i class="p-dot"></i>' + meta.label.split(' · ')[0] + '</span>' +
+        '</div>' +
+        '<div class="lot-meta">' +
+          '<span class="lot-cap">' + lot.capacity + '면 · ' + escapeHtml(lot.hours.split(' ')[0]) + '</span>' +
+          seatHtml +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function bindLotCardEvents(listEl){
+    Array.prototype.forEach.call(listEl.querySelectorAll('.lot-card'), function(card){
+      card.addEventListener('click', function(){ focusLot(card.getAttribute('data-lot')); });
+      card.addEventListener('keydown', function(e){
+        if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); focusLot(card.getAttribute('data-lot')); }
+      });
+    });
+  }
+
+  function renderList(){
+    var listEl = document.getElementById('lot-list');
+    document.getElementById('lot-count').textContent = PARKING_LOTS.length;
+
+    if(state.destResults){
+      var html = '<div class="dest-results-banner">' +
+          '<span>📍 <b>' + escapeHtml(state.destQuery) + '</b> 근처 주차장</span>' +
+          '<button id="dest-clear-btn" type="button">✕ 지우기</button>' +
+        '</div>';
+
+      html += state.destResults.map(function(r){
+        var distText = r.dist < 1000 ? Math.round(r.dist) + 'm' : (r.dist/1000).toFixed(1) + 'km';
+        return lotCardHtml(r.lot, distText);
+      }).join('');
+
+      listEl.innerHTML = html;
+      var clearBtn = document.getElementById('dest-clear-btn');
+      if(clearBtn) clearBtn.addEventListener('click', clearDestinationSearch);
+      bindLotCardEvents(listEl);
+      return;
+    }
+
+    var sorted = PARKING_LOTS.slice().sort(function(a,b){
+      return TRAFFIC_META[a.traffic].order - TRAFFIC_META[b.traffic].order;
+    });
+
+    var lastTraffic = null;
+    var html2 = sorted.map(function(lot){
+      var tierHtml = '';
+      if(lot.traffic !== lastTraffic){
+        var tm = TRAFFIC_META[lot.traffic];
+        tierHtml = '<div class="region-header">' + tm.icon + ' ' + escapeHtml(tm.label) + '</div>';
+        lastTraffic = lot.traffic;
+      }
+      return tierHtml + lotCardHtml(lot);
+    }).join('');
+
+    html2 += '<div class="region-header">🚀 확장 예정 (준비 중)</div>';
+    html2 += '<div class="expansion-box">' +
+      EXPANSION_CANDIDATES.map(function(name){
+        return '<span class="expansion-chip">' + escapeHtml(name) + '</span>';
+      }).join('') +
+      '<p class="expansion-note">이용 데이터가 쌓이면 순차적으로 지도에 추가될 예정이에요.</p>' +
+    '</div>';
+
+    listEl.innerHTML = html2;
+    bindLotCardEvents(listEl);
+  }
+
+  function focusLot(lotId){
+    state.selectedLotId = lotId;
+    renderList();
+    var lot = PARKING_LOTS.filter(function(l){ return l.id === lotId; })[0];
+    if(!lot || !map) return;
+    setTab('map');
+    setTimeout(function(){
+      map.invalidateSize();
+      map.flyTo([lot.lat, lot.lng], 16, { duration:0.6 });
+      markers[lotId].openPopup();
+    }, 60);
+  }
+
+  /* ================= RENDER: TICKER ================= */
+  function renderTicker(){
+    var el = document.getElementById('ticker-list');
+    if(!state.feed.length){
+      el.innerHTML = '<li class="ticker-empty">아직 제보가 없어요. 첫 제보를 남겨보세요 →</li>';
+      return;
+    }
+    el.innerHTML = state.feed.slice(0,12).map(function(item, i){
+      var dotClass = item.status === 'available' ? 'available' : 'full';
+      var label = item.status === 'available' ? '여유 제보' : '만차 제보';
+      return (
+        '<li class="ticker-item' + (i===0 ? ' is-new':'') + '">' +
+          '<span class="t-dot ' + dotClass + '"></span>' +
+          '<span>' + escapeHtml(item.lotName) + '</span>' +
+          '<span>· ' + label + '</span>' +
+          '<span class="t-time">' + relTime(item.ts) + '</span>' +
+        '</li>'
+      );
+    }).join('');
+  }
+
+  /* ================= RENDER: BADGE ================= */
+  function renderBadge(){
+    var tier = currentTier(state.myStats.checkins || 0);
+    document.getElementById('badge-icon').textContent = tier.icon;
+    document.getElementById('badge-name').textContent = tier.name;
+    document.getElementById('badge-pts').textContent = ((state.myStats.checkins||0) * 10) + 'P';
+  }
+
+  function renderTierModal(){
+    var count = state.myStats.checkins || 0;
+    var tier = currentTier(count);
+    var el = document.getElementById('tier-list');
+    el.innerHTML = TIERS.map(function(t){
+      var active = t.name === tier.name ? ' active-tier' : '';
+      return '<li class="' + active.trim() + '"><span>' + t.icon + '</span><span>' + t.name + ' (제보 ' + t.min + '회+)</span></li>';
+    }).join('');
+    document.getElementById('badge-modal-desc').textContent =
+      '지금까지 ' + count + '번 제보했어요 · 총 ' + (count*10) + 'P';
+  }
+
+  /* ================= TOAST ================= */
+  var toastTimer = null;
+  function showToast(msg){
+    var el = document.getElementById('toast');
+    el.innerHTML = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2200);
+  }
+
+  /* ================= TABS ================= */
+  function setTab(name){
+    var wrap = document.getElementById('body-wrap');
+    var tabMap = document.getElementById('tab-map');
+    var tabList = document.getElementById('tab-list');
+    if(name === 'map'){
+      wrap.classList.add('show-map'); wrap.classList.remove('show-list');
+      tabMap.classList.add('active'); tabList.classList.remove('active');
+      setTimeout(function(){ if(map) map.invalidateSize(); }, 40);
+    }else{
+      wrap.classList.add('show-list'); wrap.classList.remove('show-map');
+      tabList.classList.add('active'); tabMap.classList.remove('active');
+    }
+  }
+
+  /* ================= DATA LOAD ================= */
+  function loadCheckins(){
+    return Promise.all(PARKING_LOTS.map(function(lot){
+      return storageGet('checkin:' + lot.id, true).then(function(val){
+        if(val){
+          try { state.checkins[lot.id] = JSON.parse(val); } catch(e){}
+        }
+      });
+    }));
+  }
+
+  function loadFeed(){
+    return storageGet('activity-feed', true).then(function(val){
+      if(val){
+        try { state.feed = JSON.parse(val); } catch(e){ state.feed = []; }
+      }
+    });
+  }
+
+  function loadMyStats(){
+    return storageGet('my-stats', false).then(function(val){
+      if(val){
+        try { state.myStats = JSON.parse(val); } catch(e){}
+      }
+    });
+  }
+
+  function renderAll(){
+    refreshMarkers();
+    renderList();
+    renderTicker();
+    renderBadge();
+  }
+
+  function pollUpdate(){
+    Promise.all([loadCheckins(), loadFeed()]).then(renderAll);
+  }
+
+  /* ================= ACTIONS ================= */
+  function checkIn(lotId, status){
+    var lot = PARKING_LOTS.filter(function(l){ return l.id === lotId; })[0];
+    if(!lot) return;
+    var now = Date.now();
+
+    state.checkins[lotId] = { status: status, ts: now };
+    state.feed.unshift({ ts: now, lotName: lot.name, status: status });
+    state.feed = state.feed.slice(0, 20);
+    state.myStats.checkins = (state.myStats.checkins || 0) + 1;
+
+    renderAll();
+    if(map) map.closePopup();
+    showToast((status === 'available' ? '🟢 제보 감사해요!' : '🔴 제보 감사해요!') + ' <span class="t-pts">+10P</span>');
+
+    storageSet('checkin:' + lotId, JSON.stringify(state.checkins[lotId]), true);
+    storageSet('activity-feed', JSON.stringify(state.feed), true);
+    storageSet('my-stats', JSON.stringify(state.myStats), false);
+  }
+
+  function resetMyStats(){
+    state.myStats = { checkins: 0 };
+    renderBadge();
+    storageDelete('my-stats', false);
+    showToast('내 뱃지·포인트를 초기화했어요');
+  }
+
+  /* ================= DESTINATION SEARCH ================= */
+  // 목적지를 입력하면 OpenStreetMap의 무료 지오코딩(Nominatim)으로 좌표를 찾고,
+  // 그 좌표 기준으로 TOP 20 주차장을 가까운 순서로 정렬해서 보여줘요.
+  var JEJU_VIEWBOX = '126.05,33.62,127.05,33.08'; // 검색 범위를 제주 권역으로 한정
+
+  function haversineMeters(lat1, lng1, lat2, lng2){
+    var R = 6371000;
+    var toRad = function(d){ return d * Math.PI / 180; };
+    var dLat = toRad(lat2 - lat1);
+    var dLng = toRad(lng2 - lng1);
+    var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+            Math.sin(dLng/2) * Math.sin(dLng/2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  // 인터넷 지오코딩(Nominatim) 없이도 검색이 되도록, 먼저 우리가 이미 갖고 있는
+  // "자주 찾는 목적지 5곳"과 "주차장 20곳의 이름·주소"에서 부분 일치를 찾아봐요.
+  // 네트워크가 막혀 있어도(사내망, 광고차단기 등) 여기서 잡히면 바로 검색이 됩니다.
+  function findLocalDestination(query){
+    var q = query.trim();
+    if(!q) return null;
+
+    var destNames = Object.keys(QUICK_DESTS);
+    for(var i=0;i<destNames.length;i++){
+      var dn = destNames[i];
+      if(dn.indexOf(q) !== -1 || q.indexOf(dn) !== -1){
+        var pos = QUICK_DESTS[dn];
+        return { label: dn, lat: pos.lat, lng: pos.lng };
+      }
+    }
+
+    for(var j=0;j<PARKING_LOTS.length;j++){
+      var lot = PARKING_LOTS[j];
+      if(lot.name.indexOf(q) !== -1 || lot.address.indexOf(q) !== -1){
+        return { label: lot.name, lat: lot.lat, lng: lot.lng };
+      }
+    }
+    return null;
+  }
+
+  function searchDestination(){
+    var input = document.getElementById('dest-input');
+    var query = input.value.trim();
+    if(!query){
+      showToast('목적지를 입력해주세요');
+      return;
+    }
+
+    // 1) 우리가 이미 갖고 있는 목적지·주차장 데이터에서 먼저 찾아봐요 (네트워크 불필요)
+    var local = findLocalDestination(query);
+    if(local){
+      applyDestinationSearch(local.label, local.lat, local.lng);
+      return;
+    }
+
+    // 2) 없으면 온라인 지오코딩(Nominatim)으로 검색
+    var btn = document.getElementById('dest-search-btn');
+    btn.textContent = '...';
+    btn.disabled = true;
+
+    var url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&bounded=1&viewbox=' +
+      JEJU_VIEWBOX + '&accept-language=ko&q=' + encodeURIComponent(query);
+
+    fetch(url)
+      .then(function(r){ return r.json(); })
+      .then(function(results){
+        btn.textContent = '🔍';
+        btn.disabled = false;
+        if(!results || !results.length){
+          showToast('목적지를 찾지 못했어요 · 다른 이름으로 시도해보세요');
+          return;
+        }
+        var place = results[0];
+        var lat = parseFloat(place.lat), lng = parseFloat(place.lon);
+        if(isNaN(lat) || isNaN(lng)){
+          showToast('목적지 위치를 확인할 수 없어요');
+          return;
+        }
+        applyDestinationSearch(query, lat, lng);
+      })
+      .catch(function(){
+        btn.textContent = '🔍';
+        btn.disabled = false;
+        showToast('온라인 검색에 실패했어요 · 인터넷 연결을 확인하거나, 주차장 이름으로 검색해보세요');
+      });
+  }
+
+  function applyDestinationSearch(query, lat, lng){
+    var ranked = PARKING_LOTS.map(function(lot){
+      return { lot: lot, dist: haversineMeters(lat, lng, lot.lat, lot.lng) };
+    }).sort(function(a, b){ return a.dist - b.dist; });
+
+    state.destQuery = query;
+    state.destResults = ranked.slice(0, 6);
+
+    if(map){
+      if(destMarker){
+        destMarker.setLatLng([lat, lng]);
+      } else {
+        destMarker = L.marker([lat, lng], {
+          icon: L.divIcon({
+            html: '<div class="dest-pin">🎯</div>',
+            className: '',
+            iconSize: [26, 26],
+            iconAnchor: [13, 13],
+            popupAnchor: [0, -14]
+          })
+        }).addTo(map);
+      }
+      destMarker.bindPopup('<b>' + escapeHtml(query) + '</b><br/>검색한 목적지');
+
+      setTab('map');
+      setTimeout(function(){
+        map.invalidateSize();
+        map.flyTo([lat, lng], 14, { duration: 0.6 });
+      }, 60);
+    }
+
+    renderList();
+    showToast('📍 ' + escapeHtml(query) + ' 근처 주차장을 찾았어요');
+  }
+
+  function quickSelectDestination(name){
+    var pos = QUICK_DESTS[name];
+    if(!pos) return;
+    var input = document.getElementById('dest-input');
+    if(input) input.value = '';
+    applyDestinationSearch(name, pos.lat, pos.lng);
+  }
+
+  function clearDestinationSearch(){
+    state.destQuery = null;
+    state.destResults = null;
+    var input = document.getElementById('dest-input');
+    if(input) input.value = '';
+    if(destMarker){ map.removeLayer(destMarker); destMarker = null; }
+    renderList();
+  }
+
+  function locateMe(){
+    if(!navigator.geolocation){
+      showToast('이 브라우저는 위치 확인을 지원하지 않아요');
+      return;
+    }
+    if(!map){
+      showToast('지도를 불러오지 못해 위치 이동을 할 수 없어요');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(function(pos){
+      var lat = pos.coords.latitude, lng = pos.coords.longitude;
+      if(!userMarker){
+        userMarker = L.circleMarker([lat,lng], {
+          radius:8, color:'#fff', weight:3, fillColor:'#2E6FEE', fillOpacity:1
+        }).addTo(map);
+      }else{
+        userMarker.setLatLng([lat,lng]);
+      }
+      map.flyTo([lat,lng], 15, { duration:0.6 });
+    }, function(){
+      showToast('위치 권한을 확인해주세요');
+    }, { timeout: 8000 });
+  }
+
+  /* ================= INIT ================= */
+  function renderStorageNote(){
+    var el = document.getElementById('storage-mode-note');
+    if(!el) return;
+    if(hasStorage()){
+      el.innerHTML = '<b>저장 상태</b>: 🟢 공유 저장 — 이 화면에서 남긴 제보는 같은 링크로 들어온 다른 사람에게도 보이고, 새로고침해도 남아요.';
+    } else if(hasLocalStorage()){
+      el.innerHTML = '<b>저장 상태</b>: 🟡 이 브라우저에만 저장 — 새로고침해도 기록은 남지만, 다른 사람과는 공유되지 않아요. (Claude 대화 화면 밖에서 열었을 때 이렇게 동작해요)';
+    } else {
+      el.innerHTML = '<b>저장 상태</b>: 🔴 저장 불가 — 이 브라우저에서는 저장이 막혀 있어서, 창을 닫으면 기록이 사라져요.';
+    }
+  }
+
+  function init(){
+    try {
+      initMap();
+    } catch(e){
+      // 지도 라이브러리(Leaflet) 로드가 막혀도(사내망/광고차단기 등) 검색·목록 등
+      // 나머지 기능은 계속 쓸 수 있도록, 여기서 에러를 흡수하고 계속 진행해요.
+      console.error('지도를 초기화하지 못했어요:', e);
+      var mapEl = document.getElementById('map');
+      if(mapEl){
+        mapEl.innerHTML = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;color:#5B5548;font-size:13px;line-height:1.6;">지도를 불러오지 못했어요.<br/>목적지 검색과 주차장 목록은 계속 사용할 수 있어요.</div>';
+      }
+    }
+    renderList();
+    renderTicker();
+    renderBadge();
+    renderStorageNote();
+
+    Promise.all([loadCheckins(), loadFeed(), loadMyStats()]).then(function(){
+      renderAll();
+      var overlay = document.getElementById('loading-overlay');
+      overlay.style.opacity = '0';
+      setTimeout(function(){ overlay.style.display = 'none'; }, 300);
+    });
+
+    setInterval(pollUpdate, POLL_MS);
+    setInterval(function(){ renderList(); renderTicker(); refreshMarkers(); }, TICK_MS);
+
+    document.getElementById('tab-map').addEventListener('click', function(){ setTab('map'); });
+    document.getElementById('tab-list').addEventListener('click', function(){ setTab('list'); });
+
+    document.getElementById('refresh-btn').addEventListener('click', function(e){
+      e.currentTarget.classList.add('spinning');
+      pollUpdate();
+      setTimeout(function(){ e.currentTarget.classList.remove('spinning'); }, 700);
+    });
+
+    document.getElementById('locate-btn').addEventListener('click', locateMe);
+
+    document.getElementById('dest-search-btn').addEventListener('click', searchDestination);
+    document.getElementById('dest-input').addEventListener('keydown', function(e){
+      if(e.key === 'Enter'){ e.preventDefault(); searchDestination(); }
+    });
+    document.getElementById('dest-quick-select').addEventListener('change', function(e){
+      var name = e.target.value;
+      if(name){ quickSelectDestination(name); }
+      e.target.value = '';
+    });
+
+    document.getElementById('reset-btn').addEventListener('click', resetMyStats);
+
+    document.getElementById('info-btn').addEventListener('click', function(){
+      document.getElementById('info-modal').classList.add('open');
+    });
+    document.getElementById('info-close').addEventListener('click', function(){
+      document.getElementById('info-modal').classList.remove('open');
+    });
+
+    function openBadgeModal(){
+      renderTierModal();
+      document.getElementById('badge-modal').classList.add('open');
+    }
+    document.getElementById('badge-chip').addEventListener('click', openBadgeModal);
+    document.getElementById('badge-chip').addEventListener('keydown', function(e){
+      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openBadgeModal(); }
+    });
+    document.getElementById('badge-close').addEventListener('click', function(){
+      document.getElementById('badge-modal').classList.remove('open');
+    });
+
+    [['info-modal'],['badge-modal']].forEach(function(pair){
+      document.getElementById(pair[0]).addEventListener('click', function(e){
+        if(e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+      });
+    });
+  }
+
+  window.__jejuParking = { checkIn: checkIn };
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+</body>
+</html>
