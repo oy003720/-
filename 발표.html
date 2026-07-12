@@ -1,1 +1,882 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>같이 채워요, 제주 주차 · 발표자료</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --basalt:#211F1C;
+    --basalt-2:#302C26;
+    --basalt-3:#3C362D;
+    --sand:#F2ECDD;
+    --sand-2:#E7DEC6;
+    --card:#FBF8F0;
+    --ink:#26221C;
+    --ink-soft:#5B5548;
+    --tangerine:#EF8C1E;
+    --tangerine-dark:#C46E10;
+    --sea:#177C6E;
+    --sea-light:#E3F1EC;
+    --coral:#DD5240;
+    --coral-light:#FBE7E3;
+    --stone:#948C7B;
+    --stone-light:#EDE8DA;
+    --amber-led:#FFB74D;
+    --radius:16px;
+    --shadow:0 10px 30px rgba(33,31,28,0.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--sand);
+    color:var(--ink);
+    font-family:'Noto Sans KR',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    scroll-behavior:smooth;
+  }
+  ::selection{background:var(--tangerine);color:#fff;}
+  :focus-visible{outline:3px solid var(--tangerine);outline-offset:2px;border-radius:4px;}
+  h1,h2,h3{margin:0;}
+  p{margin:0;}
+  .mono{font-family:'JetBrains Mono',monospace;}
 
+  /* ---------------- deck / slide shell ---------------- */
+  .deck{
+    height:100vh;
+    height:100dvh;
+    overflow-y:auto;
+    scroll-snap-type:y mandatory;
+  }
+  .slide{
+    min-height:100vh;
+    min-height:100dvh;
+    scroll-snap-align:start;
+    scroll-snap-stop:always;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding:clamp(28px,6vw,88px) clamp(24px,8vw,110px);
+    position:relative;
+    border-bottom:1px solid rgba(0,0,0,0.05);
+  }
+  .slide.dark{background:linear-gradient(165deg,var(--basalt) 0%, var(--basalt-2) 100%); color:var(--sand);}
+  .slide.light{background:var(--sand);}
+  .slide-inner{max-width:1180px; width:100%; margin:0 auto;}
+
+  .accent-bar{
+    position:absolute; top:0; left:0;
+    width:100%; height:5px;
+  }
+  .slide[data-accent="coral"] .accent-bar{background:var(--coral);}
+  .slide[data-accent="tangerine"] .accent-bar{background:var(--tangerine);}
+  .slide[data-accent="sea"] .accent-bar{background:var(--sea);}
+
+  .eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:clamp(10.5px,1.2vw,12.5px);
+    font-weight:700;
+    letter-spacing:1.4px;
+    text-transform:uppercase;
+    margin-bottom:18px;
+  }
+  .slide[data-accent="coral"] .eyebrow{color:var(--coral);}
+  .slide[data-accent="tangerine"] .eyebrow{color:var(--tangerine-dark);}
+  .slide[data-accent="sea"] .eyebrow{color:var(--sea);}
+  .slide.dark .eyebrow{color:var(--tangerine);}
+  .eyebrow .num{
+    background:currentColor;
+    color:var(--sand);
+    -webkit-text-fill-color: initial;
+  }
+
+  h2.headline{
+    font-family:'Do Hyeon',sans-serif;
+    font-weight:400;
+    font-size:clamp(28px,4.6vw,52px);
+    line-height:1.22;
+    color:var(--ink);
+    letter-spacing:0.2px;
+  }
+  .slide.dark h2.headline{color:#fff;}
+  .headline .dot{color:var(--tangerine);}
+
+  .lede{
+    margin-top:16px;
+    font-size:clamp(13.5px,1.6vw,17px);
+    line-height:1.7;
+    color:var(--ink-soft);
+    max-width:760px;
+  }
+  .slide.dark .lede{color:#D8D0BC;}
+
+  /* ---------------- nav dots ---------------- */
+  .dotnav{
+    position:fixed;
+    right:18px; top:50%;
+    transform:translateY(-50%);
+    display:flex; flex-direction:column; gap:9px;
+    z-index:500;
+  }
+  .dotnav button{
+    width:9px; height:9px; border-radius:50%;
+    border:1.5px solid var(--stone);
+    background:transparent;
+    cursor:pointer;
+    padding:0;
+    transition:all .2s ease;
+  }
+  .dotnav button.active{
+    background:var(--tangerine);
+    border-color:var(--tangerine);
+    transform:scale(1.35);
+  }
+  @media(max-width:700px){ .dotnav{display:none;} }
+
+  .progress-rail{
+    position:fixed; left:0; top:0; width:100%; height:3px;
+    background:rgba(0,0,0,0.06); z-index:500;
+  }
+  .progress-fill{
+    height:100%; width:0%;
+    background:var(--tangerine);
+    transition:width .25s ease;
+  }
+
+  .slide-tag{
+    position:absolute;
+    left:clamp(24px,8vw,110px); bottom:22px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px; font-weight:700;
+    color:var(--stone);
+    letter-spacing:0.5px;
+  }
+  .slide.dark .slide-tag{color:#8C8370;}
+
+  /* ---------------- reusable content blocks ---------------- */
+  .chip-row{display:flex; flex-wrap:wrap; gap:10px; margin-top:26px;}
+  .chip{
+    background:var(--card);
+    border:1px solid var(--sand-2);
+    border-radius:999px;
+    padding:9px 16px;
+    font-size:13px; font-weight:700;
+    color:var(--ink);
+    display:flex; align-items:center; gap:7px;
+  }
+
+  .stat-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:16px;
+    margin-top:34px;
+  }
+  @media(max-width:820px){ .stat-grid{grid-template-columns:1fr;} }
+  .stat-card{
+    background:var(--card);
+    border:1px solid var(--sand-2);
+    border-radius:var(--radius);
+    padding:22px 20px;
+    border-top:4px solid var(--coral);
+  }
+  .stat-num{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:clamp(26px,3.4vw,36px);
+    color:var(--coral);
+  }
+  .stat-label{margin-top:8px; font-size:12.5px; font-weight:700; color:var(--ink);}
+  .stat-src{margin-top:4px; font-size:10.5px; color:var(--stone);}
+  .stat-caption{
+    margin-top:24px;
+    font-size:13px;
+    color:var(--ink-soft);
+    line-height:1.7;
+    max-width:820px;
+  }
+
+  .compare-grid{
+    display:grid;
+    grid-template-columns:1fr auto 1fr;
+    gap:18px;
+    margin-top:32px;
+    align-items:center;
+  }
+  @media(max-width:820px){ .compare-grid{grid-template-columns:1fr;} }
+  .compare-card{
+    background:var(--card);
+    border:1px solid var(--sand-2);
+    border-radius:var(--radius);
+    padding:22px 22px 20px;
+  }
+  .compare-card h3{
+    font-size:14.5px; font-weight:900; color:var(--ink);
+    display:flex; align-items:center; gap:8px;
+  }
+  .compare-card p{margin-top:10px; font-size:13px; line-height:1.7; color:var(--ink-soft);}
+  .compare-vs{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700; font-size:13px; color:var(--stone);
+    text-align:center;
+  }
+  .conclusion-line{
+    margin-top:26px;
+    font-size:14.5px;
+    font-weight:700;
+    color:var(--ink);
+    background:var(--coral-light);
+    border-left:4px solid var(--coral);
+    padding:12px 16px;
+    border-radius:0 10px 10px 0;
+    max-width:760px;
+  }
+
+  .pillar-row{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:16px;
+    margin-top:30px;
+  }
+  @media(max-width:820px){ .pillar-row{grid-template-columns:1fr;} }
+  .pillar-card{
+    background:var(--card);
+    border:1px solid var(--sand-2);
+    border-radius:var(--radius);
+    padding:20px;
+  }
+  .pillar-num{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:12px;
+    color:var(--tangerine-dark);
+  }
+  .pillar-card h3{margin-top:8px; font-size:15.5px; font-weight:900; color:var(--ink);}
+  .pillar-card p{margin-top:8px; font-size:12.5px; line-height:1.6; color:var(--ink-soft);}
+
+  .name-note{
+    margin-top:24px;
+    font-size:13px;
+    color:var(--ink-soft);
+    line-height:1.7;
+    padding:14px 16px;
+    background:var(--card);
+    border:1px dashed var(--sand-2);
+    border-radius:12px;
+    max-width:760px;
+  }
+  .name-note b{color:var(--tangerine-dark);}
+
+  /* ---- flow steps ---- */
+  .flow-row{
+    display:flex;
+    align-items:stretch;
+    gap:10px;
+    margin-top:34px;
+    flex-wrap:wrap;
+  }
+  .flow-card{
+    flex:1;
+    min-width:200px;
+    background:var(--card);
+    border:1px solid var(--sand-2);
+    border-radius:var(--radius);
+    padding:20px 18px;
+  }
+  .flow-step-num{
+    width:30px;height:30px;
+    border-radius:50%;
+    background:var(--basalt);
+    color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700; font-size:13px;
+  }
+  .flow-card h3{margin-top:12px; font-size:15px; font-weight:900; color:var(--ink);}
+  .flow-card p{margin-top:6px; font-size:12px; line-height:1.6; color:var(--ink-soft);}
+  .flow-arrow{
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; color:var(--tangerine);
+    flex:0 0 auto;
+  }
+  @media(max-width:760px){
+    .flow-row{flex-direction:column;}
+    .flow-arrow{transform:rotate(90deg); margin:-4px 0;}
+  }
+
+  /* ---- feature layout: text + mockup ---- */
+  .feature-grid{
+    display:grid;
+    grid-template-columns:1.05fr 1fr;
+    gap:34px;
+    margin-top:30px;
+    align-items:start;
+  }
+  @media(max-width:900px){ .feature-grid{grid-template-columns:1fr;} }
+  .feature-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:16px;}
+  .feature-list li{
+    display:flex; gap:12px;
+    font-size:13.5px; line-height:1.65; color:var(--ink-soft);
+  }
+  .feature-list .f-idx{
+    flex:0 0 auto;
+    width:24px;height:24px;
+    border-radius:7px;
+    background:var(--sea-light);
+    color:var(--sea);
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700; font-size:11.5px;
+    display:flex; align-items:center; justify-content:center;
+    margin-top:1px;
+  }
+  .feature-list b{color:var(--ink);}
+
+  /* mock UI card (recreated from the real app's UI) */
+  .mock-frame{
+    background:var(--card);
+    border:1px solid var(--sand-2);
+    border-radius:18px;
+    padding:16px;
+    box-shadow:var(--shadow);
+  }
+  .mock-search{
+    display:flex; gap:6px; margin-bottom:12px;
+  }
+  .mock-search .box{
+    flex:1;
+    background:#fff;
+    border:1.5px solid var(--sand-2);
+    border-radius:10px;
+    padding:8px 12px;
+    font-size:11.5px;
+    color:var(--ink-soft);
+  }
+  .mock-search .btn{
+    background:var(--basalt);
+    color:#fff;
+    border-radius:10px;
+    width:34px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px;
+  }
+  .mock-lot{
+    background:#fff;
+    border:1px solid var(--sand-2);
+    border-radius:12px;
+    padding:11px 12px;
+    margin-bottom:8px;
+  }
+  .mock-lot:last-child{margin-bottom:0;}
+  .mock-lot-top{display:flex; justify-content:space-between; align-items:flex-start; gap:8px;}
+  .mock-lot-name{font-size:12.5px; font-weight:700; color:var(--ink);}
+  .mock-lot-addr{font-size:10px; color:var(--ink-soft); margin-top:2px;}
+  .dist-badge{
+    font-family:'JetBrains Mono',monospace;
+    font-size:9.5px; font-weight:700;
+    background:var(--sand-2); color:var(--ink-soft);
+    padding:2px 7px; border-radius:999px; flex-shrink:0; white-space:nowrap;
+  }
+  .mock-lot-meta{display:flex; justify-content:space-between; align-items:center; margin-top:8px;}
+
+  .pill{
+    display:inline-flex; align-items:center; gap:5px;
+    padding:3px 9px; border-radius:999px;
+    font-size:10.5px; font-weight:700;
+  }
+  .pill.available{background:var(--sea-light); color:var(--sea);}
+  .pill.full{background:var(--coral-light); color:var(--coral);}
+  .pill.stale{background:var(--stone-light); color:#8b8262;}
+  .pill.unknown{background:var(--stone-light); color:var(--stone);}
+  .pill .p-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
+  /* freshness timeline */
+  .fresh-timeline{
+    margin-top:26px;
+    display:flex;
+    border-radius:12px;
+    overflow:hidden;
+    height:46px;
+    box-shadow:var(--shadow);
+  }
+  .fresh-seg{
+    flex:1;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11.5px; font-weight:700;
+    color:#fff;
+    font-family:'JetBrains Mono',monospace;
+    position:relative;
+  }
+  .fresh-seg.s1{background:var(--sea);}
+  .fresh-seg.s2{background:var(--stone);}
+  .fresh-seg.s3{background:var(--stone-light); color:var(--ink-soft);}
+  .fresh-labels{display:flex; margin-top:8px; font-size:11px; color:var(--ink-soft);}
+  .fresh-labels div{flex:1; text-align:center;}
+
+  /* ticker + badge mockups */
+  .ticker-mock{
+    background:#171512;
+    border-radius:12px;
+    padding:10px 14px;
+    display:flex; flex-direction:column; gap:9px;
+    margin-top:26px;
+  }
+  .ticker-mock .row{
+    display:flex; align-items:center; gap:9px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11.5px; color:#E8D9BC;
+  }
+  .ticker-mock .row .t-dot{width:7px;height:7px;border-radius:50%; flex-shrink:0;}
+  .ticker-mock .row .t-dot.available{background:#3FD6A8; box-shadow:0 0 6px #3FD6A8;}
+  .ticker-mock .row .t-dot.full{background:#FF6B57; box-shadow:0 0 6px #FF6B57;}
+  .ticker-mock .row .t-time{color:#8A8272; margin-left:auto;}
+
+  .tier-row{
+    display:flex; flex-wrap:wrap; gap:10px; margin-top:18px;
+  }
+  .tier-chip{
+    flex:1; min-width:130px;
+    background:var(--card);
+    border:1px solid var(--sand-2);
+    border-radius:12px;
+    padding:12px 10px;
+    text-align:center;
+  }
+  .tier-chip.active{border-color:var(--tangerine); background:#FCEBD2;}
+  .tier-chip .t-icon{font-size:20px;}
+  .tier-chip .t-name{display:block; margin-top:6px; font-size:11.5px; font-weight:700; color:var(--ink);}
+  .tier-chip .t-min{display:block; margin-top:2px; font-family:'JetBrains Mono',monospace; font-size:9.5px; color:var(--stone);}
+
+  /* data source diagram */
+  .source-diagram{
+    display:flex; align-items:center; gap:14px; margin-top:34px; flex-wrap:wrap;
+  }
+  .source-box{
+    flex:1; min-width:220px;
+    background:var(--card);
+    border:1.5px solid var(--sand-2);
+    border-radius:var(--radius);
+    padding:20px;
+  }
+  .source-box h3{font-size:14px; font-weight:900; color:var(--ink); display:flex; gap:8px; align-items:center;}
+  .source-box p{margin-top:8px; font-size:12px; line-height:1.6; color:var(--ink-soft);}
+  .source-plus{font-size:22px; color:var(--tangerine); flex:0 0 auto;}
+  .source-arrow{font-size:22px; color:var(--tangerine); flex:0 0 auto;}
+  .source-result{
+    flex:1; min-width:220px;
+    background:var(--basalt);
+    color:#fff;
+    border-radius:var(--radius);
+    padding:20px;
+  }
+  .source-result h3{font-size:14px; font-weight:900; display:flex; gap:8px; align-items:center;}
+  .source-result p{margin-top:8px; font-size:12px; line-height:1.6; color:#D8D0BC;}
+  .source-outputs{display:flex; gap:8px; margin-top:12px;}
+  .source-outputs span{
+    background:rgba(255,255,255,0.1);
+    border:1px solid rgba(255,255,255,0.18);
+    border-radius:8px; padding:5px 10px; font-size:11px; font-weight:700;
+  }
+  @media(max-width:900px){
+    .source-diagram{flex-direction:column;}
+    .source-plus, .source-arrow{transform:rotate(90deg);}
+  }
+
+  .storage-note-box{
+    margin-top:22px;
+    display:flex; gap:10px; flex-wrap:wrap;
+  }
+  .storage-note-box .snb{
+    flex:0 1 auto; max-width:640px; min-width:200px;
+    font-size:11.5px; line-height:1.6; color:var(--ink-soft);
+    background:var(--card); border:1px solid var(--sand-2);
+    border-radius:10px; padding:11px 13px;
+  }
+  .storage-note-box b{color:var(--ink);}
+
+  .closing-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:28px; margin-top:34px;
+  }
+  @media(max-width:820px){ .closing-grid{grid-template-columns:1fr;} }
+  .closing-col h3{
+    font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:1px;
+    color:var(--tangerine); text-transform:uppercase; margin-bottom:12px;
+  }
+  .closing-col ul{margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:10px;}
+  .closing-col li{
+    font-size:13px; line-height:1.6; color:#D8D0BC;
+    padding-left:16px; position:relative;
+  }
+  .closing-col li::before{
+    content:'—'; position:absolute; left:0; color:var(--tangerine);
+  }
+  .closing-line{
+    margin-top:40px;
+    font-family:'Do Hyeon',sans-serif;
+    font-size:clamp(20px,2.6vw,28px);
+    color:#fff;
+  }
+  .closing-line .dot{color:var(--tangerine);}
+
+  @media(prefers-reduced-motion:reduce){
+    .deck{scroll-behavior:auto;}
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-rail"><div class="progress-fill" id="progressFill"></div></div>
+<nav class="dotnav" id="dotnav" aria-label="슬라이드 이동"></nav>
+
+<div class="deck" id="deck">
+
+  <!-- 1. COVER -->
+  <section class="slide dark" id="s1" data-title="표지">
+    <div class="slide-inner">
+      <span class="eyebrow">발표자료 · Problem → Solution</span>
+      <h2 class="headline" style="font-size:clamp(34px,6.2vw,64px);">같이 채워요,<br/>제주 주차<span class="dot">.</span></h2>
+      <p class="lede" style="max-width:640px;">렌터카와 여행객 차량이 넘치는 제주에서, 목적지 주변 주차장을 추천하고<br/>지금 자리가 있는지는 이용자들이 서로 알려주는 실시간 제보형 웹 서비스</p>
+      <div class="ticker-mock" style="max-width:420px;">
+        <div class="row"><span class="t-dot available"></span>협재해수욕장 공영주차장 · 여유 제보<span class="t-time">2분 전</span></div>
+        <div class="row"><span class="t-dot full"></span>제주올레시장 공영주차장 · 만차 제보<span class="t-time">5분 전</span></div>
+      </div>
+    </div>
+    <div class="slide-tag">오윤서 제작 · 01 / 11</div>
+  </section>
+
+  <!-- 2. PROBLEM: description -->
+  <section class="slide light" data-accent="coral" id="s2" data-title="문제 정의">
+    <div class="accent-bar"></div>
+    <div class="slide-inner">
+      <span class="eyebrow"><span class="num">01</span> 문제 정의</span>
+      <h2 class="headline">다 둘러봤는데,<br/>세울 곳이 없다<span class="dot">.</span></h2>
+      <p class="lede">해수욕장, 재래시장, 관광지 근처에서 몇 바퀴씩 돌면서 빈 자리를 찾는 경험, 제주에서는 낯설지 않습니다. 자동차와 렌터카가 유독 많은 섬이라, 이 배회는 다른 지역보다 훨씬 자주, 훨씬 오래 반복됩니다.</p>
+      <div class="chip-row">
+        <div class="chip">🔄 반복되는 배회</div>
+        <div class="chip">⏳ 낭비되는 시간</div>
+        <div class="chip">🚦 가중되는 혼잡</div>
+        <div class="chip">😤 여행의 스트레스</div>
+      </div>
+    </div>
+    <div class="slide-tag">02 / 11</div>
+  </section>
+
+  <!-- 3. PROBLEM: stats -->
+  <section class="slide light" data-accent="coral" id="s3" data-title="숫자로 보는 문제">
+    <div class="accent-bar"></div>
+    <div class="slide-inner">
+      <span class="eyebrow"><span class="num">01</span> 문제 정의 — 숫자로 보면</span>
+      <h2 class="headline">차는 넘치는데,<br/>자리는 안 보인다<span class="dot">.</span></h2>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-num">71.6만대</div>
+          <div class="stat-label">제주 등록 자동차 수</div>
+          <div class="stat-src">국토교통부, 2025년 상반기 자동차 등록 통계</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">111곳<span style="font-size:0.55em;"> · 약 3만대</span></div>
+          <div class="stat-label">제주 렌터카 업체 수 · 보유 차량</div>
+          <div class="stat-src">제주특별자치도 자동차대여사업 현황</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">전국 1위</div>
+          <div class="stat-label">인구 대비 차량 보유율</div>
+          <div class="stat-src">국토교통부 자동차 등록 통계</div>
+        </div>
+      </div>
+      <p class="stat-caption">성수기에는 여기에 여행객이 배로 들여오는 차량, 성수기 집중 운행 렌터카까지 더해져 도로와 주차장이 실제로 감당해야 하는 차량 수는 통계보다 훨씬 크게 느껴집니다.</p>
+    </div>
+    <div class="slide-tag">03 / 11</div>
+  </section>
+
+  <!-- 4. PROBLEM: cause -->
+  <section class="slide light" data-accent="coral" id="s4" data-title="문제의 원인">
+    <div class="accent-bar"></div>
+    <div class="slide-inner">
+      <span class="eyebrow"><span class="num">01</span> 문제 정의 — 왜 안 풀리나</span>
+      <h2 class="headline">정보가 없어서,<br/>가봐야 안다<span class="dot">.</span></h2>
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h3>📋 공공 주차장 정보</h3>
+          <p>위치, 주소, 총 면수 같은 <b>고정된 정보</b>만 제공. 지금 몇 자리가 비어 있는지는 알려주지 않습니다.</p>
+        </div>
+        <div class="compare-vs">+</div>
+        <div class="compare-card">
+          <h3>📡 실시간 센서</h3>
+          <p>정확하지만 설치·유지 비용이 크고, 제주 전역 주차장에 적용하려면 시간이 오래 걸립니다.</p>
+        </div>
+      </div>
+      <div class="conclusion-line">→ 결국 운전자는 "직접 가서 눈으로 확인"하는 수밖에 없고, 그 확인 과정이 바로 배회입니다.</div>
+    </div>
+    <div class="slide-tag">04 / 11</div>
+  </section>
+
+  <!-- 5. SOLUTION intro -->
+  <section class="slide light" data-accent="tangerine" id="s5" data-title="솔루션 소개">
+    <div class="accent-bar"></div>
+    <div class="slide-inner">
+      <span class="eyebrow"><span class="num">02</span> 솔루션</span>
+      <h2 class="headline">같이 채워요,<br/>제주 주차<span class="dot">.</span></h2>
+      <p class="lede">목적지를 입력하면 주변 주차장을 보여주고, 지금 자리가 있는지는 지자체 센서가 아니라 <b>이용자들이 서로 알려주는</b> 웹 서비스입니다.</p>
+      <div class="pillar-row">
+        <div class="pillar-card">
+          <div class="pillar-num">PILLAR 01</div>
+          <h3>위치 기반 추천</h3>
+          <p>목적지 주변 주차장을 가까운 순서로 지도·목록에 보여줍니다.</p>
+        </div>
+        <div class="pillar-card">
+          <div class="pillar-num">PILLAR 02</div>
+          <h3>실시간 여유·만차 제보</h3>
+          <p>부족한 실시간 데이터를, 다녀간 사람들의 제보로 채웁니다.</p>
+        </div>
+        <div class="pillar-card">
+          <div class="pillar-num">PILLAR 03</div>
+          <h3>참여를 이끄는 보상</h3>
+          <p>제보할수록 포인트가 쌓이고 등급(뱃지)이 올라갑니다.</p>
+        </div>
+      </div>
+      <div class="name-note">💡 서비스 이름의 의미 — 지자체 실시간 데이터가 없는 빈자리를, <b>사람이 다 같이</b> 채워나간다는 뜻을 담았습니다.</div>
+    </div>
+    <div class="slide-tag">05 / 11</div>
+  </section>
+
+  <!-- 6. FLOW overview -->
+  <section class="slide light" data-accent="tangerine" id="s6" data-title="작동 흐름 개요">
+    <div class="accent-bar"></div>
+    <div class="slide-inner">
+      <span class="eyebrow"><span class="num">02</span> 솔루션 — 작동 흐름</span>
+      <h2 class="headline">세 단계로 끝나요<span class="dot">.</span></h2>
+      <div class="flow-row">
+        <div class="flow-card">
+          <div class="flow-step-num">1</div>
+          <h3>목적지 입력</h3>
+          <p>장소를 검색하거나, 자주 찾는 목적지 중 하나를 고르거나, 내 위치를 사용합니다.</p>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-card">
+          <div class="flow-step-num">2</div>
+          <h3>주변 주차장 추천</h3>
+          <p>가까운 순서로 정렬된 주차장 목록과 지도 핀을 함께 보여줍니다.</p>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-card">
+          <div class="flow-step-num">3</div>
+          <h3>확인 &amp; 제보</h3>
+          <p>여유·만차 상태를 확인하고, 도착한 뒤엔 직접 상태를 남겨 다음 사람을 돕습니다.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-tag">06 / 11</div>
+  </section>
+
+  <!-- 7. FEATURE: search -->
+  <section class="slide light" data-accent="sea" id="s7" data-title="핵심기능 - 목적지 검색">
+    <div class="accent-bar"></div>
+    <div class="slide-inner">
+      <span class="eyebrow"><span class="num">03</span> 핵심 기능 — 목적지 검색</span>
+      <h2 class="headline" style="font-size:clamp(26px,4vw,44px);">어디로 가든,<br/>가까운 순서로<span class="dot">.</span></h2>
+      <div class="feature-grid">
+        <ul class="feature-list">
+          <li><span class="f-idx">1</span><span>목적지를 입력하면 좌표로 바꿉니다. <b>이미 알고 있는 관광지·주차장 이름</b>과 먼저 대조하고, 없으면 온라인 지도 검색(OpenStreetMap)으로 찾습니다.</span></li>
+          <li><span class="f-idx">2</span><span>그 좌표를 기준으로 제주 전역 주차장까지의 <b>거리를 계산</b>해 가까운 곳부터 정렬합니다.</span></li>
+          <li><span class="f-idx">3</span><span>정렬된 결과를 <b>지도 핀과 목록</b>에 동시에 표시해, 어디서든 한눈에 비교할 수 있습니다.</span></li>
+        </ul>
+        <div class="mock-frame">
+          <div class="mock-search">
+            <div class="box">🔍 협재해수욕장</div>
+            <div class="btn">🎯</div>
+          </div>
+          <div class="mock-lot">
+            <div class="mock-lot-top">
+              <div><div class="mock-lot-name">협재해수욕장 공영주차장</div><div class="mock-lot-addr">한림읍 협재리</div></div>
+              <div class="dist-badge">280m</div>
+            </div>
+            <div class="mock-lot-meta"><span class="pill full"><span class="p-dot"></span>만차</span></div>
+          </div>
+          <div class="mock-lot">
+            <div class="mock-lot-top">
+              <div><div class="mock-lot-name">한림읍 인근 노상주차장</div><div class="mock-lot-addr">한림읍 협재리</div></div>
+              <div class="dist-badge">640m</div>
+            </div>
+            <div class="mock-lot-meta"><span class="pill available"><span class="p-dot"></span>여유</span></div>
+          </div>
+          <div class="mock-lot">
+            <div class="mock-lot-top">
+              <div><div class="mock-lot-name">금능해수욕장 공영주차장</div><div class="mock-lot-addr">한림읍 금능리</div></div>
+              <div class="dist-badge">1.1km</div>
+            </div>
+            <div class="mock-lot-meta"><span class="pill unknown"><span class="p-dot"></span>정보 없음</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-tag">07 / 11</div>
+  </section>
+
+  <!-- 8. FEATURE: status freshness -->
+  <section class="slide light" data-accent="sea" id="s8" data-title="핵심기능 - 여유만차 표시">
+    <div class="accent-bar"></div>
+    <div class="slide-inner">
+      <span class="eyebrow"><span class="num">03</span> 핵심 기능 — 여유·만차 표시</span>
+      <h2 class="headline" style="font-size:clamp(26px,4vw,44px);">숫자보다 빠른,<br/>지금 이 순간의 상태<span class="dot">.</span></h2>
+      <p class="lede">예상 잔여석 숫자는 참고용일 뿐, 화면에 뜨는 색은 <b>이용자 제보</b> 기준입니다. 시간이 지날수록 신뢰도를 낮춰, 항상 최신 정보에 가깝게 유지합니다.</p>
+      <div class="chip-row" style="margin-top:22px;">
+        <span class="pill available"><span class="p-dot"></span>여유</span>
+        <span class="pill full"><span class="p-dot"></span>만차</span>
+        <span class="pill stale"><span class="p-dot"></span>정보 오래됨</span>
+        <span class="pill unknown"><span class="p-dot"></span>정보 없음</span>
+      </div>
+      <div class="fresh-timeline">
+        <div class="fresh-seg s1">0 – 30분 · 신뢰</div>
+        <div class="fresh-seg s2">30 – 60분 · 오래됨</div>
+        <div class="fresh-seg s3">60분+ · 정보 없음</div>
+      </div>
+      <p class="lede" style="margin-top:14px; font-size:12.5px;">제보가 들어온 순간부터 시간이 흐르는 방식이며, 새 제보가 들어오면 다시 처음부터 신뢰 구간이 시작됩니다.</p>
+    </div>
+    <div class="slide-tag">08 / 11</div>
+  </section>
+
+  <!-- 9. FEATURE: report + gamification -->
+  <section class="slide light" data-accent="sea" id="s9" data-title="핵심기능 - 실시간 제보">
+    <div class="accent-bar"></div>
+    <div class="slide-inner">
+      <span class="eyebrow"><span class="num">03</span> 핵심 기능 — 실시간 제보</span>
+      <h2 class="headline" style="font-size:clamp(26px,4vw,44px);">제보 한 번,<br/>모두에게 전달<span class="dot">.</span></h2>
+      <div class="feature-grid">
+        <div>
+          <ul class="feature-list">
+            <li><span class="f-idx">1</span><span>지도 팝업의 <b>"🟢 자리 있어요" / "🔴 만차예요"</b> 버튼 한 번이면 제보가 끝납니다.</span></li>
+            <li><span class="f-idx">2</span><span>제보는 즉시 상단 <b>LIVE 티커</b>에 표시되고, 같은 링크로 접속한 다른 이용자 화면에도 반영됩니다.</span></li>
+            <li><span class="f-idx">3</span><span>제보 1회마다 <b>10포인트</b>가 쌓이고, 누적 횟수에 따라 등급이 올라갑니다.</span></li>
+          </ul>
+          <div class="ticker-mock">
+            <div class="row"><span class="t-dot available"></span>이호테우해변 공영주차장 · 여유 제보<span class="t-time">방금</span></div>
+            <div class="row"><span class="t-dot full"></span>성산일출봉 공영주차장 · 만차 제보<span class="t-time">3분 전</span></div>
+          </div>
+        </div>
+        <div>
+          <p style="font-size:12.5px; font-weight:700; color:var(--ink-soft); margin-bottom:2px;">제보 횟수로 올라가는 등급</p>
+          <div class="tier-row">
+            <div class="tier-chip active"><span class="t-icon">🌱</span><span class="t-name">주차 새내기</span><span class="t-min">0회+</span></div>
+            <div class="tier-chip"><span class="t-icon">🧭</span><span class="t-name">골목 탐험가</span><span class="t-min">3회+</span></div>
+            <div class="tier-chip"><span class="t-icon">📍</span><span class="t-name">동네 척척박사</span><span class="t-min">7회+</span></div>
+            <div class="tier-chip"><span class="t-icon">🍊</span><span class="t-name">제주 주차요정</span><span class="t-min">15회+</span></div>
+          </div>
+          <p class="lede" style="margin-top:16px; font-size:12.5px;">혼자 쓰는 지도가 아니라, 쓸수록 다 같이 정확해지는 지도를 만드는 장치입니다.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-tag">09 / 11</div>
+  </section>
+
+  <!-- 10. TECH / data flow -->
+  <section class="slide light" data-accent="tangerine" id="s10" data-title="데이터 구조">
+    <div class="accent-bar"></div>
+    <div class="slide-inner">
+      <span class="eyebrow"><span class="num">04</span> 어떻게 만들어졌나</span>
+      <h2 class="headline" style="font-size:clamp(26px,4vw,44px);">두 데이터가 만나<br/>하나의 지도가 된다<span class="dot">.</span></h2>
+      <div class="source-diagram">
+        <div class="source-box">
+          <h3>📋 공공데이터</h3>
+          <p>주차장 위치·주소·총 면수 — 변하지 않는 기본 골격</p>
+        </div>
+        <div class="source-plus">+</div>
+        <div class="source-box">
+          <h3>🙋 이용자 제보</h3>
+          <p>지금 여유인지 만차인지 — 살아 움직이는 실시간 정보</p>
+        </div>
+        <div class="source-arrow">→</div>
+        <div class="source-result">
+          <h3>🗺️ 실시간 주차 지도</h3>
+          <p>두 데이터를 합쳐 지도·목록으로 동시에 보여줍니다</p>
+          <div class="source-outputs"><span>지도 뷰</span><span>목록 뷰</span></div>
+        </div>
+      </div>
+      <div class="storage-note-box">
+        <div class="snb">🟢 <b>공유 저장</b> — 같은 링크로 들어온 다른 사람에게도 제보가 실시간으로 보이고, 새로고침해도 남아요</div>
+      </div>
+    </div>
+    <div class="slide-tag">10 / 11</div>
+  </section>
+
+  <!-- 11. CLOSING -->
+  <section class="slide dark" id="s11" data-title="마무리">
+    <div class="slide-inner">
+      <span class="eyebrow">마무리</span>
+      <div class="closing-grid">
+        <div class="closing-col">
+          <h3>기대 효과</h3>
+          <ul>
+            <li>배회 시간과 이중주차·혼잡 감소</li>
+            <li>목적지 도착 전 미리 계획할 수 있는 여유</li>
+            <li>주민과 관광객이 서로 돕는 정보 순환</li>
+          </ul>
+        </div>
+        <div class="closing-col">
+          <h3>한계 &amp; 발전 방향</h3>
+          <ul>
+            <li>초기엔 제보가 적어 정확도가 낮을 수 있음 → 참여 유도가 핵심</li>
+            <li>향후 지자체 실시간 데이터와 연계하면 더 정확해질 수 있음</li>
+          </ul>
+        </div>
+      </div>
+      <p class="closing-line">다 같이 채우면, 다 같이 편해집니다<span class="dot">.</span></p>
+    </div>
+    <div class="slide-tag">감사합니다 · 11 / 11</div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var dotnav = document.getElementById('dotnav');
+  var progressFill = document.getElementById('progressFill');
+  var deck = document.getElementById('deck');
+
+  slides.forEach(function(s, i){
+    var b = document.createElement('button');
+    b.setAttribute('aria-label', (i+1) + '. ' + s.getAttribute('data-title'));
+    b.addEventListener('click', function(){ s.scrollIntoView({behavior:'smooth'}); });
+    dotnav.appendChild(b);
+  });
+  var dots = Array.prototype.slice.call(dotnav.querySelectorAll('button'));
+
+  var currentIndex = 0;
+  function setActive(i){
+    currentIndex = i;
+    dots.forEach(function(d, di){ d.classList.toggle('active', di === i); });
+    progressFill.style.width = (((i+1) / slides.length) * 100) + '%';
+  }
+
+  var observer = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if(entry.isIntersecting && entry.intersectionRatio > 0.5){
+        var idx = slides.indexOf(entry.target);
+        if(idx !== -1) setActive(idx);
+      }
+    });
+  }, { threshold: [0.5] });
+  slides.forEach(function(s){ observer.observe(s); });
+
+  document.addEventListener('keydown', function(e){
+    if(['ArrowDown','ArrowRight','PageDown',' '].indexOf(e.key) !== -1){
+      e.preventDefault();
+      var next = Math.min(currentIndex + 1, slides.length - 1);
+      slides[next].scrollIntoView({behavior:'smooth'});
+    } else if(['ArrowUp','ArrowLeft','PageUp'].indexOf(e.key) !== -1){
+      e.preventDefault();
+      var prev = Math.max(currentIndex - 1, 0);
+      slides[prev].scrollIntoView({behavior:'smooth'});
+    }
+  });
+
+  setActive(0);
+})();
+</script>
+</body>
+</html>
